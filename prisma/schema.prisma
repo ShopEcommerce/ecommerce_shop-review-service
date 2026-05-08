@@ -1,0 +1,61 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  userId      String
+  productId   String
+  rating      Int
+  comment     String?  @db.Text
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, productId]) 
+  @@map("reviews")
+}
+
+model PurchaseRecord {
+  id          String   @id @default(uuid())
+  userId      String
+  productId   String
+  orderId     String
+  
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, productId, orderId])
+  @@map("purchase_records")
+}
+
+// 3. OUTBOX & INBOX PATTERN
+enum EventStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+}
+
+model OutboxEvent {
+  id          String      @id @default(uuid())
+  subject     String
+  payload     Json
+  status      EventStatus @default(PENDING)
+  errorReason String?
+  createdAt   DateTime    @default(now())
+  processedAt DateTime?
+
+  @@map("outbox_events")
+}
+
+model ProcessedEvent {
+  eventId     String   @id
+  subject     String
+  processedAt DateTime @default(now())
+
+  @@map("processed_events")
+}
