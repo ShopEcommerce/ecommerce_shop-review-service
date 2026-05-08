@@ -2,6 +2,8 @@ import 'dotenv/config';
 import { app } from './app';
 import { rabbitmqWrapper } from '@teleshop/common';
 import pino from 'pino';
+import { OrderCompletedListener } from './events/listeners/order-completed-listener';
+import { startOutboxWorker } from './workers/outbox.worker';
 
 const logger = pino();
 
@@ -22,6 +24,10 @@ const start = async () => {
     // Graceful Shutdown
     process.on('SIGINT', () => rabbitmqWrapper.close());
     process.on('SIGTERM', () => rabbitmqWrapper.close());
+
+    new OrderCompletedListener(rabbitmqWrapper.channel).listen();
+
+    startOutboxWorker();
 
     const port = process.env.PORT;
     app.listen(port, () => {
