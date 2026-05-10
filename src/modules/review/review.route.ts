@@ -8,17 +8,16 @@ const router = express.Router();
 const requireAuthMw = requireAuth as unknown as RequestHandler;
 
 // PUBLIC ROUTES
-router.get(
-  '/:productId',
-  asyncHandler(ReviewController.getProductReviews as any)
-);
+router.get('/:productId', asyncHandler(ReviewController.getProductReviews as any));
 
 // PRIVATE ROUTES
 router.post(
   '/',
   requireAuthMw,
   validateZod(createReviewSchema),
-  asyncHandler(ReviewController.createReview as any)
+  asyncHandler(ReviewController.createReview as any),
 );
+
+router.delete('/:reviewId', requireAuthMw, asyncHandler(ReviewController.deleteReview as any));
 
 export { router as reviewRouter };

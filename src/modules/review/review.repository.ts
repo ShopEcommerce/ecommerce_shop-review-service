@@ -3,10 +3,9 @@ import { Subjects } from '@teleshop/common';
 import crypto from 'crypto';
 
 export class ReviewRepository {
-  
   static async hasPurchased(userId: string, productId: string): Promise<boolean> {
     const record = await prisma.purchaseRecord.findFirst({
-      where: { userId, productId }
+      where: { userId, productId },
     });
     return !!record;
   }
@@ -18,7 +17,7 @@ export class ReviewRepository {
   static async createReview(userId: string, productId: string, rating: number, comment?: string) {
     return prisma.$transaction(async (tx) => {
       const review = await tx.review.create({
-        data: { userId, productId, rating, comment }
+        data: { userId, productId, rating, comment },
       });
 
       const payload = {
@@ -27,14 +26,14 @@ export class ReviewRepository {
         occurredAt: new Date().toISOString(),
         productId,
         rating,
-        reviewId: review.id
+        reviewId: review.id,
       };
 
       await tx.outboxEvent.create({
         data: {
           subject: Subjects.ReviewCreated,
-          payload: payload as any
-        }
+          payload: payload as any,
+        },
       });
 
       return review;
@@ -47,11 +46,11 @@ export class ReviewRepository {
       where: { productId },
       skip,
       take: limit,
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  static async deleteReview(id: string, productId: string) {
+  static async deleteReview(id: string) {
     return prisma.$transaction(async (tx) => {
       const review = await tx.review.delete({ where: { id } });
 
@@ -63,9 +62,9 @@ export class ReviewRepository {
             type: 'review:deleted',
             occurredAt: new Date().toISOString(),
             productId: review.productId,
-            reviewId: review.id
-          } as any
-        }
+            reviewId: review.id,
+          } as any,
+        },
       });
 
       return review;

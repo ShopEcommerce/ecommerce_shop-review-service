@@ -3,21 +3,22 @@ import { BadRequestError, ForbiddenError, NotFoundError } from '@teleshop/common
 import { prisma } from '../../db/prisma';
 
 export class ReviewService {
-  
   static async createReview(userId: string, productId: string, rating: number, comment?: string) {
     const hasPurchased = await ReviewRepository.hasPurchased(userId, productId);
     if (!hasPurchased) {
-      throw new ForbiddenError('Bạn chỉ có thể đánh giá sản phẩm sau khi đã mua và nhận hàng thành công.');
+      throw new ForbiddenError(
+        'You can only review a product after purchasing and successfully receiving it.',
+      );
     }
 
     const existingReview = await prisma.review.findUnique({
       where: {
-        userId_productId: { userId, productId }
-      }
+        userId_productId: { userId, productId },
+      },
     });
 
     if (existingReview) {
-      throw new BadRequestError('Bạn đã đánh giá sản phẩm này rồi.');
+      throw new BadRequestError('You have already reviewed this product.');
     }
 
     return ReviewRepository.createReview(userId, productId, rating, comment);
@@ -29,10 +30,10 @@ export class ReviewService {
 
   static async deleteReview(reviewId: string, userId: string) {
     const review = await ReviewRepository.findById(reviewId);
-    if (!review) throw new NotFoundError('Không tìm thấy đánh giá');
+    if (!review) throw new NotFoundError('Review not found');
 
-    if (review.userId !== userId) throw new ForbiddenError('Bạn không có quyền xóa đánh giá này');
+    if (review.userId !== userId) throw new ForbiddenError('You are not the owner of this review');
 
-    return ReviewRepository.deleteReview(reviewId, review.productId);
+    return ReviewRepository.deleteReview(reviewId);
   }
 }
