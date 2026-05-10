@@ -7,14 +7,17 @@ import pino from 'pino';
 const logger = pino({ name: 'OrderCompletedListener' });
 
 export class OrderCompletedListener extends BaseListener<any> {
-  subject: any = 'OrderCompleted'; 
+  readonly subject = Subjects.OrderCompleted;
   queueGroupName = QueueGroupNames.ReviewService;
 
-  async onMessage(data: any, msg: Message) {
+  async onMessage(data: any, _msg: Message) {
     const { eventId, orderId, userId, items } = data;
     const correlationId = data.correlationId || 'N/A';
 
-    logger.info({ correlationId, eventId, orderId }, 'Received signal: Order completed. Updating review permissions.');
+    logger.info(
+      { correlationId, eventId, orderId },
+      'Received signal: Order completed. Updating review permissions.',
+    );
 
     try {
       if (await InboxRepository.isEventProcessed(eventId)) {
@@ -28,9 +31,9 @@ export class OrderCompletedListener extends BaseListener<any> {
               userId_productId_orderId: {
                 userId,
                 productId: item.productId,
-                orderId
-              }
-            }
+                orderId,
+              },
+            },
           });
 
           if (!exists) {
@@ -38,8 +41,8 @@ export class OrderCompletedListener extends BaseListener<any> {
               data: {
                 userId,
                 productId: item.productId,
-                orderId
-              }
+                orderId,
+              },
             });
           }
         }
@@ -48,7 +51,6 @@ export class OrderCompletedListener extends BaseListener<any> {
       });
 
       logger.info({ correlationId, orderId }, 'Successfully updated review permissions.');
-
     } catch (error: any) {
       logger.error({ err: error.message }, 'Error occurred while processing OrderCompleted event');
       throw error;
