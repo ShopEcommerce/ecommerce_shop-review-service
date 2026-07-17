@@ -11,3 +11,22 @@ export const createReviewSchema = z.object({
     comment: z.string().max(500, 'Comment must not exceed 500 characters').optional(),
   }),
 });
+
+export const getProductReviewsSchema = z.object({
+  params: z.object({
+    productId: z.string().uuid('Invalid product ID'),
+  }),
+  query: z.object({
+    page: z.coerce.number().min(1).default(1),
+    limit: z.coerce.number().min(1).max(100).default(10),
+  }),
+});
+
+export const deleteReviewSchema = z.object({
+  params: z.object({
+    reviewId: z.string().uuid('Invalid review ID'),
+  }),
+});
+
+export type CreateReviewInput = z.infer<typeof createReviewSchema>['body'];
+export type GetProductReviewsQuery = z.infer<typeof getProductReviewsSchema>['query'];

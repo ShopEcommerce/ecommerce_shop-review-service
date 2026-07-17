@@ -2,15 +2,17 @@ import express, { RequestHandler } from 'express';
 import { ReviewController } from './review.controller';
 import { requireAuth, asyncHandler } from '@teleshop/common';
 import { validateZod } from '../../middlewares/validate.middleware';
-import { createReviewSchema } from './review.schema';
+import { createReviewSchema, deleteReviewSchema, getProductReviewsSchema } from './review.schema';
 
 const router = express.Router();
 const requireAuthMw = requireAuth as unknown as RequestHandler;
 
-// PUBLIC ROUTES
-router.get('/:productId', asyncHandler(ReviewController.getProductReviews as any));
+router.get(
+  '/:productId',
+  validateZod(getProductReviewsSchema),
+  asyncHandler(ReviewController.getProductReviews as any),
+);
 
-// PRIVATE ROUTES
 router.post(
   '/',
   requireAuthMw,
@@ -18,6 +20,11 @@ router.post(
   asyncHandler(ReviewController.createReview as any),
 );
 
-router.delete('/:reviewId', requireAuthMw, asyncHandler(ReviewController.deleteReview as any));
+router.delete(
+  '/:reviewId',
+  requireAuthMw,
+  validateZod(deleteReviewSchema),
+  asyncHandler(ReviewController.deleteReview as any),
+);
 
 export { router as reviewRouter };

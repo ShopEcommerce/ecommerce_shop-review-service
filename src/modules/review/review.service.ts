@@ -3,7 +3,13 @@ import { BadRequestError, ForbiddenError, NotFoundError } from '@teleshop/common
 import { prisma } from '../../db/prisma';
 
 export class ReviewService {
-  static async createReview(userId: string, productId: string, rating: number, comment?: string) {
+  static async createReview(
+    userId: string,
+    productId: string,
+    rating: number,
+    comment?: string,
+    correlationId?: string,
+  ) {
     const hasPurchased = await ReviewRepository.hasPurchased(userId, productId);
     if (!hasPurchased) {
       throw new ForbiddenError(
@@ -21,19 +27,19 @@ export class ReviewService {
       throw new BadRequestError('You have already reviewed this product.');
     }
 
-    return ReviewRepository.createReview(userId, productId, rating, comment);
+    return ReviewRepository.createReview(userId, productId, rating, comment, correlationId);
   }
 
   static async getProductReviews(productId: string, page: number, limit: number) {
     return ReviewRepository.getReviewsByProduct(productId, page, limit);
   }
 
-  static async deleteReview(reviewId: string, userId: string) {
+  static async deleteReview(reviewId: string, userId: string, correlationId?: string) {
     const review = await ReviewRepository.findById(reviewId);
     if (!review) throw new NotFoundError('Review not found');
 
     if (review.userId !== userId) throw new ForbiddenError('You are not the owner of this review');
 
-    return ReviewRepository.deleteReview(reviewId);
+    return ReviewRepository.deleteReview(reviewId, correlationId);
   }
 }
