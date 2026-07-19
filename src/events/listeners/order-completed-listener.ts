@@ -1,18 +1,27 @@
 import { Message } from 'amqplib';
-import { BaseListener, QueueGroupNames, Subjects } from '@teleshop/common';
+import { BaseListener, DomainEvent, QueueGroupNames, Subjects } from '@teleshop/common';
 import { prisma } from '../../db/prisma';
 import { InboxRepository } from '../../modules/inbox/inbox.repository';
 import pino from 'pino';
 
 const logger = pino({ name: 'OrderCompletedListener' });
 
-export class OrderCompletedListener extends BaseListener<any> {
+type OrderCompletedEvent = Extract<DomainEvent, { subject: Subjects.OrderCompleted }>;
+
+export class OrderCompletedListener extends BaseListener<OrderCompletedEvent> {
   readonly subject = Subjects.OrderCompleted;
   queueGroupName = QueueGroupNames.ReviewService;
 
-  async onMessage(data: any, _msg: Message) {
-    const { eventId, orderId, userId, items } = data;
+  async onMessage(data: OrderCompletedEvent['data'], _msg: Message) {
+    const eventId = data.id || (data as OrderCompletedEvent['data'] & { eventId?: string }).eventId;
+    const { orderId, userId, items } = data;
     const correlationId = data.correlationId || 'N/A';
+
+    if (!eventId || !orderId || !userId || !items) {
+      throw new Error(
+        'Invalid OrderCompleted payload: missing event identifier, orderId, userId, or items',
+      );
+    }
 
     logger.info(
       { correlationId, eventId, orderId },
